@@ -8,6 +8,7 @@ from requests_html import HTMLSession
 # Local Imports
 import credentials
 import config
+import mqtt_integration
 
 
 def get_tbb_token():
@@ -42,7 +43,7 @@ def get_sites(token):
     return json.load(io.BytesIO(fix_bytes_value))
 
 
-def get_tbb_data(token, site_id, date):
+def get_tbb_data_from_graph(token, site_id, date):
     session = HTMLSession()
     data = {
         "Authorization": token
@@ -70,6 +71,13 @@ def get_tbb_data(token, site_id, date):
     return cleaned_record
 
 
+def get_tbb_data_from_sites(token, site_id, date):
+    sites = get_sites(token)
+    # Get Sites where ID is site_id
+    # TODO: error handling
+    return [site for site in sites['data'] if site['id'] == site_id][0]
+
+
 token_ = get_tbb_token()
 
 sites = get_sites(token_)
@@ -78,10 +86,29 @@ for site in sites['data']:
 
 site_to_query = credentials.tbb_site_id  # You can get your site ID from the request above.
 
+c = mqtt_integration.connect_mqtt()
+
+state = None
+
 while True:
-    tbb_data = get_tbb_data(token_, site_to_query, datetime.date.today().strftime("%Y-%m-%d"))
-    print(f"{tbb_data['time'].time()} - {tbb_data['tbb_data']['solar']['val']} W")
-    # This graph data only refreshes by the minute, so no use in pounding the
-    # system every few seconds.
-    # This is where I'll publish to MQTT
-    time.sleep(60)
+    tbb_data = get_tbb_data_from_sites(token_, site_to_query, datetime.datetime.now().strftime("%Y-%m-%d"))
+    charge_rate = float(tbb_data['solar_yield']) - float(tbb_data['consumption'])
+    soc = float(tbb_data['battery_soc'])
+    print(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - Battery SOC: {tbb_data['battery_soc']}%"
+          f" | Solar Yield: {tbb_data['solar_yield']} W"
+          f" | Load: {tbb_data['consumption']} W"
+          f" | Charge Rate: {charge_rate} W")
+    if charge_rate > 0:
+        if soc > 98 and charge_rate > 0:
+            if state != "surplus":
+                state = "surplus"
+                mqtt_integration.publish(c, state)
+        if state != "charging":
+            state = "charging"
+            mqtt_integration.publish(c, state)
+    else:
+        if state != "discharging":
+            state = "discharging"
+            mqtt_integration.publish(c, state)
+
+    time.sleep(10)
