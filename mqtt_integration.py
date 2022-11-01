@@ -1,5 +1,5 @@
 import random
-
+import config
 from paho.mqtt import client as mqtt_client
 
 import credentials
@@ -24,18 +24,16 @@ def connect_mqtt():
 
 
 def publish(topic, client, msg):
-    pass
-    # TODO reenable, disabled for now so it doesn't ship to my HA instance unnecessarily
-    # result = client.publish(topic, msg)
-    # status = result[0]
-    #
-    # if not config.debug:
-    #     return
-    #
-    # if status == 0:
-    #     print(f"Sent message `{msg}` to topic `{topic}`")
-    # else:
-    #     print(f"Failed to send message `{msg}` to topic {topic}")
+    result = client.publish(topic, msg)
+    status = result[0]
+
+    if not config.debug:
+        return
+
+    if status == 0:
+        print(f"Sent message `{msg}` to topic `{topic}`")
+    else:
+        print(f"Failed to send message `{msg}` to topic {topic}")
 
 
 def get_binary_sensor_mqtt_config_message(device_class, group_name, entity_name, friendly_name):

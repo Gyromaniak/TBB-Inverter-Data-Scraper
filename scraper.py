@@ -50,7 +50,7 @@ def consume_and_publish_energy_stats(tbb_summary_data):
     mqtt.publish("homeassistant/tbb-scraper/pv/state", client, summary_solar)
     mqtt.publish("homeassistant/tbb-scraper/export/state", client, summary_ac_feedback)
     mqtt.publish("homeassistant/tbb-scraper/import/state", client, summary_ac_in)
-    mqtt.publish("homeassistant/tbb-scraper/load/state", client, summary_ac_load)
+    mqtt.publish("homeassistant/tbb-scraper/loadEnergy/state", client, summary_ac_load)
 
     # battery charge / discharge is not available on source data
     # we have to compute it from the other values
