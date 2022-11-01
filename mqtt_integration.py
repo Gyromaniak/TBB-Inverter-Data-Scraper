@@ -1,8 +1,8 @@
 import random
 
-import config
-import credentials
 from paho.mqtt import client as mqtt_client
+
+import credentials
 
 client_id = f'python-mqtt-{random.randint(0, 1000)}'
 
@@ -24,16 +24,18 @@ def connect_mqtt():
 
 
 def publish(topic, client, msg):
-    result = client.publish(topic, msg)
-    status = result[0]
-
-    if not config.debug:
-        return
-
-    if status == 0:
-        print(f"Sent message `{msg}` to topic `{topic}`")
-    else:
-        print(f"Failed to send message `{msg}` to topic {topic}")
+    pass
+    # TODO reenable, disabled for now so it doesn't ship to my HA instance unnecessarily
+    # result = client.publish(topic, msg)
+    # status = result[0]
+    #
+    # if not config.debug:
+    #     return
+    #
+    # if status == 0:
+    #     print(f"Sent message `{msg}` to topic `{topic}`")
+    # else:
+    #     print(f"Failed to send message `{msg}` to topic {topic}")
 
 
 def get_binary_sensor_mqtt_config_message(device_class, group_name, entity_name, friendly_name):
@@ -78,13 +80,15 @@ def publish_discovery_messages(client):
     pv_energy_config_message = get_mqtt_config_message("energy", "tbb-scraper", "pv", "PV Energy", "kWh",
                                                        measurement=False)
     export_energy_config_message = get_mqtt_config_message("energy", "tbb-scraper", "export", "Export Energy",
-                                                           "Wh", measurement=False)
+                                                           "kWh", measurement=False)
     import_energy_config_message = get_mqtt_config_message("energy", "tbb-scraper", "import", "Import Energy",
-                                                           "Wh", measurement=False)
+                                                           "kWh", measurement=False)
     discharge_energy_config_message = get_mqtt_config_message("energy", "tbb-scraper", "discharge",
-                                                              "Discharge Energy", "Wh", measurement=False)
+                                                              "Discharge Energy", "kWh", measurement=False)
     charge_energy_config_message = get_mqtt_config_message("energy", "tbb-scraper", "charge", "Charge Energy",
-                                                           "Wh", measurement=False)
+                                                           "kWh", measurement=False)
+    load_energy_config_message = get_mqtt_config_message("energy", "tbb-scraper", "loadEnergy", "Load Energy", "kWh",
+                                                         measurement=False)
 
     publish(f"homeassistant/binary_sensor/tbb-scraper/problem/config", client, problem_config_message)
 
@@ -99,3 +103,4 @@ def publish_discovery_messages(client):
     publish(f"homeassistant/sensor/tbb-scraper/import/config", client, import_energy_config_message)
     publish(f"homeassistant/sensor/tbb-scraper/discharge/config", client, discharge_energy_config_message)
     publish(f"homeassistant/sensor/tbb-scraper/charge/config", client, charge_energy_config_message)
+    publish(f"homeassistant/sensor/tbb-scraper/loadEnergy/config", client, load_energy_config_message)
