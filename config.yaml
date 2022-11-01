@@ -1,7 +1,7 @@
-name: "Sunsynk Scraper"
-description: "Scrapes the SunSynk / inteless API for data on your solar setup!"
+name: "TBB Scraper"
+description: "Scrapes the Nova TBB API for data on your solar setup!"
 version: "0.1.0"
-slug: "sunsynk_scrapper"
+slug: "tbb_scraper"
 init: false
 arch:
   - aarch64

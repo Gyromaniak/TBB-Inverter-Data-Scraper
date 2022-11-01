@@ -2,4 +2,4 @@
 
 echo "Starting..."
 
-python3 /app/main.py
+python3 /app/scraper.py
