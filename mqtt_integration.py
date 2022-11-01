@@ -74,6 +74,8 @@ def publish_discovery_messages(client):
     pv_power_config_message = get_mqtt_config_message("power", "tbb-scraper", "pvPower", "PV Power", "W")
     grid_power_config_message = get_mqtt_config_message("power", "tbb-scraper", "gridPower", "Grid Power", "W")
     batt_power_config_message = get_mqtt_config_message("power", "tbb-scraper", "battPower", "Battery Power", "W")
+    batt_charge_power_config_message = get_mqtt_config_message("power", "tbb-scraper", "battChargePower", "Battery Charge Power", "W")
+    batt_discharge_power_config_message = get_mqtt_config_message("power", "tbb-scraper", "battDischargePower", "Battery Discharge Power", "W")
 
     pv_energy_config_message = get_mqtt_config_message("energy", "tbb-scraper", "pv", "PV Energy", "kWh",
                                                        measurement=False)
@@ -95,6 +97,8 @@ def publish_discovery_messages(client):
     publish(f"homeassistant/sensor/tbb-scraper/pvPower/config", client, pv_power_config_message)
     publish(f"homeassistant/sensor/tbb-scraper/gridPower/config", client, grid_power_config_message)
     publish(f"homeassistant/sensor/tbb-scraper/battPower/config", client, batt_power_config_message)
+    publish(f"homeassistant/sensor/tbb-scraper/battChargePower/config", client, batt_charge_power_config_message)
+    publish(f"homeassistant/sensor/tbb-scraper/battDischargePower/config", client, batt_discharge_power_config_message)
 
     publish(f"homeassistant/sensor/tbb-scraper/pv/config", client, pv_energy_config_message)
     publish(f"homeassistant/sensor/tbb-scraper/export/config", client, export_energy_config_message)

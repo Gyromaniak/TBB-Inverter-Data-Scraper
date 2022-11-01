@@ -1,5 +1,6 @@
 import datetime
 import time
+import math
 
 import config
 import credentials
@@ -27,7 +28,10 @@ def consume_and_publish_power_stats(tbb_data):
     mqtt.publish("homeassistant/tbb-scraper/pvPower/state", client, pv_power)
     mqtt.publish("homeassistant/tbb-scraper/gridPower/state", client, grid_power)
     mqtt.publish("homeassistant/tbb-scraper/battPower/state", client, battery_power)
-
+    if battery_power > 0:
+        mqtt.publish("homeassistant/tbb-scraper/battDischargePower/state", client, abs(battery_power))
+    if battery_power < 0:
+        mqtt.publish("homeassistant/tbb-scraper/battChargePower/state", client, abs(battery_power))
 
 def consume_and_publish_energy_stats(tbb_summary_data):
     summary_ac_load = tbb_summary_data['acout']  # never gets used by any HA sensor, whats dis?
