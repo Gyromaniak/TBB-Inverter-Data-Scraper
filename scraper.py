@@ -1,6 +1,5 @@
 import asyncio
 import datetime
-import time
 
 import config
 import credentials
@@ -115,11 +114,24 @@ async def main():
 
     tbb = TBB(config, credentials)
     sites = tbb.sites
-    for site in sites['data']:
-        print("You have access to site: " + site['name'] + " with ID: " + str(site['id']))
 
     site_to_query = credentials.tbb_site_id
+    print(f"Configured to use the following site for your Homeassistant integration: {site_to_query}")
+    equipment_number = ""
+    for site in sites['data']:
+        print("You have access to site: " + site['name'] + " with ID: " + str(site['id']))
+        if site['id'] == site_to_query:
+            equipment_number = site['system_id']
+
+    if equipment_number == "":
+        raise Exception("Could not find the equipment number for the site you specified. "
+                        "Please check your credentials and try again.")
+
+    tbb.selected_site_number = site_to_query
+    tbb.selected_equipment_number = equipment_number
+
     print("\nUsing Site ID: " + str(site_to_query))
+    print(f"Using equipment number: {equipment_number}")
 
     client = await mqtt.connect_mqtt()
     mqtt.publish_discovery_messages(client)

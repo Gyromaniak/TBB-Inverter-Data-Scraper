@@ -14,6 +14,8 @@ class TBB:
         self.token = self.get_tbb_token()
         self.sites = self.get_sites()
         self.insta_charge_last_pressed = None
+        self.selected_site_number = None
+        self.selected_equipment_number = None
 
     def get_tbb_token(self):
         url = self.config.tbb_login_url
@@ -116,8 +118,7 @@ class TBB:
 
         return summary_data_kwh
 
-    def send_charge_command(self):
-        # TODO: Add last_handled command to prevent spamming of this command.
+    def send_charge_command(self, equipment_number):
 
         if not self.insta_charge_last_pressed or (datetime.datetime.now() - self.insta_charge_last_pressed).seconds > 180:
             self.insta_charge_last_pressed = datetime.datetime.now()
@@ -125,7 +126,7 @@ class TBB:
             if self.config.debug:
                 print("Not sending charge command as debug is enabled.")
                 return True
-            ws = create_connection("ws://8.210.132.188:10250/websocket/equipment/CG0622080219E1")
+            ws = create_connection(f"ws://8.210.132.188:10250/websocket/equipment/{equipment_number}")
 
             print("Sending Authentication message")
             auth_message = {
