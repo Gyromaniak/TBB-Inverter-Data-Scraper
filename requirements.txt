@@ -5,3 +5,4 @@ paho-mqtt==1.6.1
 pyppeteer==1.0.2
 requests==2.28.1
 urllib3==1.26.12
+websocket-client~=1.4.1

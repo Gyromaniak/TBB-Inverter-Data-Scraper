@@ -1,19 +1,20 @@
+import asyncio
 import datetime
 import time
-import math
 
 import config
 import credentials
 import mqtt_integration as mqtt
+from mqtt_handler import MQTTHandler
 from tbb_integrations import TBB
 
 
-def get_daily_summary(site_to_query):
+def get_daily_summary(site_to_query, tbb):
     tbb_summary_data = tbb.get_tbb_day_summary(site_to_query, datetime.datetime.now().strftime("%Y-%m-%d"))
     return tbb_summary_data
 
 
-def consume_and_publish_power_stats(tbb_data):
+def consume_and_publish_power_stats(client, tbb_data):
     alarm_state = "ON" if tbb_data["alarm_status"] != 0 else "OFF"
     load = float(tbb_data['consumption'])  # load in W
     pv_power = float(tbb_data['solar_yield'])  # pv_power in W
@@ -33,7 +34,8 @@ def consume_and_publish_power_stats(tbb_data):
     if battery_power < 0:
         mqtt.publish("homeassistant/tbb-scraper/battChargePower/state", client, abs(battery_power))
 
-def consume_and_publish_energy_stats(tbb_summary_data):
+
+def consume_and_publish_energy_stats(client, tbb_summary_data):
     summary_ac_load = tbb_summary_data['acout']  # never gets used by any HA sensor, whats dis?
     summary_ac_in = tbb_summary_data['acin']
     summary_solar = tbb_summary_data['solar']
@@ -106,7 +108,11 @@ def print_daily_stats_thus_far(tbb_summary_data):
           )
 
 
-if __name__ == '__main__':
+async def main():
+
+    if config.debug:
+        print("Debug mode enabled. Charge command will not work!")
+
     tbb = TBB(config, credentials)
     sites = tbb.sites
     for site in sites['data']:
@@ -115,20 +121,26 @@ if __name__ == '__main__':
     site_to_query = credentials.tbb_site_id
     print("\nUsing Site ID: " + str(site_to_query))
 
-    client = mqtt.connect_mqtt()
+    client = await mqtt.connect_mqtt()
     mqtt.publish_discovery_messages(client)
+    mqtt_handler = MQTTHandler(client, tbb, config)
+    mqtt_handler.subscribe_to_command_topics()
 
     print("Collecting power data every 10 seconds. Press Ctrl+C to stop.")
     print("####################################################")
 
     while True:
         tbb_data = tbb.get_tbb_data_from_sites(site_to_query)
-        consume_and_publish_power_stats(tbb_data)
+        consume_and_publish_power_stats(client, tbb_data)
 
-        tbb_summary_data = get_daily_summary(site_to_query)
-        consume_and_publish_energy_stats(tbb_summary_data)
+        tbb_summary_data = get_daily_summary(site_to_query, tbb)
+        consume_and_publish_energy_stats(client, tbb_summary_data)
 
         print_current_system_state(tbb_data)
         print_daily_stats_thus_far(tbb_summary_data)
 
-        time.sleep(10)
+        await asyncio.sleep(10)
+
+
+if __name__ == '__main__':
+    asyncio.run(main())

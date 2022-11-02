@@ -1,8 +1,10 @@
 import datetime
 import io
 import json
-
+import uuid
+import datetime
 import requests
+from websocket import create_connection
 
 
 class TBB:
@@ -11,6 +13,7 @@ class TBB:
         self.credentials = credentials
         self.token = self.get_tbb_token()
         self.sites = self.get_sites()
+        self.insta_charge_last_pressed = None
 
     def get_tbb_token(self):
         url = self.config.tbb_login_url
@@ -112,3 +115,45 @@ class TBB:
             print(f"Summary Data Obtained: {summary_data_kwh}")
 
         return summary_data_kwh
+
+    def send_charge_command(self):
+        # TODO: Add last_handled command to prevent spamming of this command.
+
+        if not self.insta_charge_last_pressed or (datetime.datetime.now() - self.insta_charge_last_pressed).seconds > 180:
+            self.insta_charge_last_pressed = datetime.datetime.now()
+
+            if self.config.debug:
+                print("Not sending charge command as debug is enabled.")
+                return True
+            ws = create_connection("ws://8.210.132.188:10250/websocket/equipment/CG0622080219E1")
+
+            print("Sending Authentication message")
+            auth_message = {
+                "uuid": str(uuid.uuid4()),
+                "cmd": 272,
+                "lang": "en",
+                "data": {
+                    "token": self.token}
+            }
+            ws.send(json.dumps(auth_message))
+            print("Sent")
+            print("Receiving...")
+            result = ws.recv()
+            print("Received '%s'" % result)
+            result = ws.recv()
+            print("Sending trigger Charge message")
+            trigger_charge_message = {"uuid": str(uuid.uuid4()),
+                                      "cmd": 320,
+                                      "tag": 9,
+                                      "data": {"address": "00331103F3", "val": "1", "symbol": ""}
+                                      }
+
+            ws.send(json.dumps(trigger_charge_message))
+            print("Sent")
+            print("Receiving...")
+            result = ws.recv()
+            print("Received '%s'" % result)
+
+            ws.close()
+        else:
+            print("Last pressed was less than 3 minutes ago. Not sending command.")

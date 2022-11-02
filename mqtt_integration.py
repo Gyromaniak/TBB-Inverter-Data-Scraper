@@ -1,4 +1,7 @@
+import asyncio
 import random
+from json import dumps
+
 import config
 from paho.mqtt import client as mqtt_client
 
@@ -7,23 +10,36 @@ import credentials
 client_id = f'python-mqtt-{random.randint(0, 1000)}'
 
 
-def connect_mqtt():
-    def on_connect(client, userdata, flags, rc):
-        if rc == 0:
-            print("Connected to MQTT Broker!")
-        else:
-            print("Failed to connect, return code %d\n", rc)
+def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print("Connected to MQTT Broker!")
+    else:
+        print("Failed to connect, return code %d\n", rc)
 
+
+async def connect_mqtt():
     # Set Connecting Client ID
 
     client = mqtt_client.Client(client_id)
     client.username_pw_set(credentials.mqtt_username, credentials.mqtt_password)
     client.on_connect = on_connect
-    client.connect(credentials.mqtt_broker, credentials.mqtt_port)
+    client.connect_async(credentials.mqtt_broker, credentials.mqtt_port)
+    client.loop_start()
+
+    retry = 10
+    while retry and not client.is_connected():
+        print(f'MQTT: Waiting for connection... ({retry})')
+        await asyncio.sleep(1)
+        retry -= 1
+
+    if not retry:
+        raise ConnectionError(f"MQTT: Could not connect")
+
     return client
 
 
 def publish(topic, client, msg):
+
     result = client.publish(topic, msg)
     status = result[0]
 
@@ -67,6 +83,17 @@ def get_mqtt_config_message(device_class, group_name, entity_name, friendly_name
 
 
 def publish_discovery_messages(client):
+
+    charge_button = {
+        'unique_id': 'button.tbb-charge-button',
+        'name': 'TBB Insta-Charge',
+        'state_topic': 'homeassistant/button/tbb-scraper/charge-button/state',
+        'payload_press': 'charge', # default from HA is 'PRESS'
+        'command_topic': 'homeassistant/button/tbb-scraper/charge-button/commands',
+    }
+
+    client.publish("homeassistant/button/tbb-scraper/charge-button/config", dumps(charge_button))
+
     problem_config_message = get_binary_sensor_mqtt_config_message("power", "tbb-scraper", "problem", "Problem")
 
     soc_config_message = get_mqtt_config_message("battery", "tbb-scraper", "soc", "Battery", "%")
