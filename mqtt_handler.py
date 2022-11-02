@@ -11,7 +11,7 @@ class MQTTHandler(object):
     def handle_charge_button_press(self):
         print("Handling charge button press.")
         print("####################")
-        self.tbb.send_charge_command(self.tbb.equipment_number)
+        self.tbb.send_charge_command(self.tbb.selected_equipment_number)
         print("####################")
 
     def on_mqtt_command_message_received(self, client, userdata, message):
