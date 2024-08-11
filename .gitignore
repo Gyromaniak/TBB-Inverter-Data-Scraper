@@ -1,5 +1,4 @@
 # Project Specific Ignores
-credentials.py
 .idea
 
 # Byte-compiled / optimized / DLL files

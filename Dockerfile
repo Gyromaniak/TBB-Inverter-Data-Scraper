@@ -8,6 +8,5 @@ COPY . ./
 
 RUN ls -la /app
 
-RUN chmod a+x /app/run.sh
-
-CMD [ "/app/run.sh" ]
+RUN echo "Starting..." && \
+    python3 /app/scraper.py
