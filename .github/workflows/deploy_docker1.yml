@@ -31,7 +31,6 @@ jobs:
           password: ${{ secrets.DOCKER1_PASSWORD }}
           port: 42068
           script: |
-            export BUILD_FROM=python:3.10-slim
             export TBB_USERNAME=${{ secrets.TBB_USERNAME }}
             export TBB_PASSWORD=${{ secrets.TBB_PASSWORD }}
             export TBB_SITE_ID=${{ secrets.TBB_SITE_ID }}
