@@ -6,7 +6,7 @@ WORKDIR /app
 
 COPY . ./
 
-RUN ls
+RUN ls -la /app
 
 RUN chmod a+x /app/run.sh
 

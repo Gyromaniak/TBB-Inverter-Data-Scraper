@@ -21,7 +21,7 @@ jobs:
           password: ${{ secrets.DOCKER1_PASSWORD }}
           port: ${{ secrets.DOCKER1_PORT }}
           source: "./*"
-          target: "~/deploy/"
+          target: "~/deploy-tbb-scraper/"
 
       - name: Build and restart the application
         uses: appleboy/ssh-action@master
