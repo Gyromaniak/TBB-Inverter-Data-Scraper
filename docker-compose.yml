@@ -9,6 +9,7 @@ services:
     ports:
       - "8224:8224"
     environment:
+      BUILD_FROM: ${BUILD_FROM}
       TBB_USERNAME: ${TBB_USERNAME}
       TBB_PASSWORD: ${TBB_PASSWORD}
       TBB_SITE_ID: ${TBB_SITE_ID}
