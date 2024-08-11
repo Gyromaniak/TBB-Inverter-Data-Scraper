@@ -1,0 +1,46 @@
+name: Deploy TBB Scraper
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Transfer project files
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DOCKER1_IP }}
+          username: ${{ secrets.DOCKER1_USER }}
+          password: ${{ secrets.DOCKER1_PASSWORD }}
+          port: ${{ secrets.DOCKER1_PORT }}
+          source: "./*"
+          target: "~/deploy/"
+
+      - name: Build and restart the application
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DOCKER1_IP }}
+          username: ${{ secrets.DOCKER1_USER }}
+          password: ${{ secrets.DOCKER1_PASSWORD }}
+          port: 42068
+          script: |
+            export BUILD_FROM=python:3.10-slim
+            export TBB_USERNAME=${{ secrets.TBB_USERNAME }}
+            export TBB_PASSWORD=${{ secrets.TBB_PASSWORD }}
+            export TBB_SITE_ID=${{ secrets.TBB_SITE_ID }}
+            export MQTT_USERNAME=${{ secrets.MQTT_USERNAME }}
+            export MQTT_PASSWORD=${{ secrets.MQTT_PASSWORD }}
+            export MQTT_BROKER=${{ secrets.MQTT_BROKER }}
+            export MQTT_PORT=${{ secrets.MQTT_PORT }}
+            export MQTT_TOPIC=${{ secrets.MQTT_TOPIC }}
+            cd ~/deploy
+            docker compose down
+            docker compose build --no-cache
+            docker compose up -d

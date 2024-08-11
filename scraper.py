@@ -81,6 +81,10 @@ def print_current_system_state(tbb_data):
     grid_power = float(tbb_data['ac_source'])  # grid_power in W
     battery_soc = float(tbb_data['battery_soc'])  # battery_soc in %
     battery_power = round(load - pv_power - grid_power, 3)  # battery_power in W
+    battery_type = tbb_data['battery_type']
+    battery_voltage_type = tbb_data['battery_voltage_type']
+    battery_capacity = float(tbb_data['battery_capacity'])  # battery_capacity in Ah
+    battery_status = tbb_data['battery_status']
 
     print(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
           f" | Power Summary"
@@ -91,7 +95,11 @@ def print_current_system_state(tbb_data):
           f" | Grid: {grid_power} W"
           f" | Alarm State: {alarm_state}"
           f" | Battery Power: {battery_power} W"
-          f" | DC Voltage: {dc_voltage} V")
+          f" | DC Voltage: {dc_voltage} V"
+          f" | Battery Type: {battery_type}"
+          f" | Battery Voltage Type: {battery_voltage_type}"
+          f" | Battery Capacity: {battery_capacity} Ah"
+          f" | Battery Status: {battery_status}")
 
 
 def print_daily_stats_thus_far(tbb_summary_data):
@@ -141,17 +149,34 @@ async def main():
     print("Collecting power data every 10 seconds. Press Ctrl+C to stop.")
     print("####################################################")
 
+    error_count = 0
+    error_max = 60
     while True:
-        tbb_data = tbb.get_tbb_data_from_sites(site_to_query)
-        consume_and_publish_power_stats(client, tbb_data)
 
-        tbb_summary_data = get_daily_summary(site_to_query, tbb)
-        consume_and_publish_energy_stats(client, tbb_summary_data)
+        try:
+            1/0
+            tbb_data = tbb.get_tbb_data_from_sites(site_to_query)
+            consume_and_publish_power_stats(client, tbb_data)
 
-        print_current_system_state(tbb_data)
-        print_daily_stats_thus_far(tbb_summary_data)
+            tbb_summary_data = get_daily_summary(site_to_query, tbb)
+            consume_and_publish_energy_stats(client, tbb_summary_data)
 
-        await asyncio.sleep(10)
+            print_current_system_state(tbb_data)
+            print_daily_stats_thus_far(tbb_summary_data)
+
+            await asyncio.sleep(10)
+        except Exception as e:
+            print(f"An error occurred ({error_count}/{error_max}): {e}")
+            error_count += 1
+
+            if error_count >= error_max:
+                print("Too many errors occurred. Exiting.")
+                break
+
+            await asyncio.sleep(10)
+            continue
+
+
 
 
 if __name__ == '__main__':
