@@ -39,7 +39,7 @@ jobs:
             export MQTT_BROKER=${{ secrets.MQTT_BROKER }}
             export MQTT_PORT=${{ secrets.MQTT_PORT }}
             export MQTT_TOPIC=${{ secrets.MQTT_TOPIC }}
-            cd ~/deploy
+            cd ~/deploy-tbb-scraper
             docker compose down
             docker compose build --no-cache
             docker compose up -d
