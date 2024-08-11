@@ -2,7 +2,6 @@ version: '3.9'
 
 services:
   tbb-scraper:
-    image: tbb-scraper
     build:
       context: .
       dockerfile: Dockerfile
