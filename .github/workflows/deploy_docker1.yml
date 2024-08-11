@@ -23,6 +23,16 @@ jobs:
           source: "./*"
           target: "~/deploy-tbb-scraper/"
 
+      - name: Verify files on server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DOCKER1_IP }}
+          username: ${{ secrets.DOCKER1_USER }}
+          password: ${{ secrets.DOCKER1_PASSWORD }}
+          port: ${{ secrets.DOCKER1_PORT }}
+          script: |
+            ls -la ~/deploy-tbb-scraper
+
       - name: Build and restart the application
         uses: appleboy/ssh-action@master
         with:
