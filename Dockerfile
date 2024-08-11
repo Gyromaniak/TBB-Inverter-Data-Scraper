@@ -1,15 +1,18 @@
+# Use an official Python runtime as a parent image
 FROM python:3.10-slim
 
-WORKDIR /app
+# Set the working directory in the container
+WORKDIR /usr/src/app
 
-# Install dependencies
-RUN pip3 install --no-cache-dir paho-mqtt~=1.6.1 requests~=2.28.1 websocket-client~=1.4.1
+# Copy the requirements.txt file into the container at /usr/src/app
+COPY requirements.txt ./
 
-# Copy the application code
+# Install any needed packages specified in requirements.txt
+RUN python -m venv venv310
+RUN . venv310/bin/activate && pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application
 COPY . .
 
-# Ensure the script is executable
-RUN chmod +x /app/run.sh
-
-# Run the script
-CMD ["/app/run.sh"]
+# Run app.py when the container launches
+CMD [ "venv310/bin/python", "scraper.py" ]

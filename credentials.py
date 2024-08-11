@@ -11,10 +11,31 @@ mqtt_port = os.getenv("MQTT_PORT")
 mqtt_topic = os.getenv("MQTT_TOPIC")
 
 
-for var_name, var_value in locals().copy().items():
-    if "mqtt_" in var_name or "tbb_" in var_name:
-        if var_value is None:
-            raise ValueError(f"{var_name} environment variable is not set.")
+if not tbb_username:
+    raise Exception("TBB_USERNAME environment variable not set.")
+
+if not tbb_password:
+    raise Exception("TBB_PASSWORD environment variable not set.")
+
+if not tbb_site_id:
+    raise Exception("TBB_SITE_ID environment variable not set.")
+
+if not mqtt_username:
+    raise Exception("MQTT_USERNAME environment variable not set.")
+
+if not mqtt_password:
+    raise Exception("MQTT_PASSWORD environment variable not set.")
+
+if not mqtt_broker:
+    raise Exception("MQTT_BROKER environment variable not set.")
+
+if not mqtt_port:
+    raise Exception("MQTT_PORT environment variable not set.")
+
+if not mqtt_topic:
+    raise Exception("MQTT_TOPIC environment variable not set.")
+
+
 
 
 
