@@ -154,7 +154,6 @@ async def main():
     while True:
 
         try:
-            1/0
             tbb_data = tbb.get_tbb_data_from_sites(site_to_query)
             consume_and_publish_power_stats(client, tbb_data)
 
