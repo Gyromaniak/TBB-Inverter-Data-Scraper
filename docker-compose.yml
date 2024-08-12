@@ -16,3 +16,9 @@ services:
       MQTT_BROKER: ${MQTT_BROKER}
       MQTT_PORT: ${MQTT_PORT}
       MQTT_TOPIC: ${MQTT_TOPIC}
+    networks:
+      - tbb_network
+
+networks:
+  tbb_network:
+    driver: bridge

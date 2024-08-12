@@ -99,7 +99,8 @@ def print_current_system_state(tbb_data):
           f" | Battery Type: {battery_type}"
           f" | Battery Voltage Type: {battery_voltage_type}"
           f" | Battery Capacity: {battery_capacity} Ah"
-          f" | Battery Status: {battery_status}")
+          f" | Battery Status: {battery_status}"
+          , flush=True)
 
 
 def print_daily_stats_thus_far(tbb_summary_data):
@@ -112,7 +113,7 @@ def print_daily_stats_thus_far(tbb_summary_data):
           f" | Solar: {tbb_summary_data['solar']} kWh"
           f" | Solar - Load delta: {solar_load_delta} kWh"
           f" | AC Feedback: {tbb_summary_data['adfeedback']} kWh"
-          )
+          , flush=True)
 
 
 async def main():
