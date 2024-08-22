@@ -147,11 +147,11 @@ async def main():
     mqtt_handler = MQTTHandler(client, tbb, config)
     mqtt_handler.subscribe_to_command_topics()
 
-    print("Collecting power data every 10 seconds. Press Ctrl+C to stop.")
+    print("Collecting power data every 10 seconds.")
     print("####################################################")
 
     error_count = 0
-    error_max = 60
+    error_max = 10
     while True:
 
         try:
@@ -166,6 +166,16 @@ async def main():
 
             await asyncio.sleep(10)
         except Exception as e:
+
+            try:
+                print(f"Failed to get data: {e}, reinitializing TBB object.")
+                tbb = TBB(config, credentials)
+            except Exception as e:
+                print(f"Failed to reinitialize TBB object: {e}")
+                error_count += 1
+                await asyncio.sleep(10)
+                continue
+
             print(f"An error occurred ({error_count}/{error_max}): {e}")
             error_count += 1
 
