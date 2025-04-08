@@ -38,9 +38,9 @@ async def connect_mqtt():
     return client
 
 
-def publish(topic, client, msg):
+def publish(topic, client, msg, retain=False):
 
-    result = client.publish(topic, msg)
+    result = client.publish(topic, msg, retain=retain)
     status = result[0]
 
     if not config.debug:

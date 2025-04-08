@@ -22,16 +22,18 @@ def consume_and_publish_power_stats(client, tbb_data):
     battery_soc = float(tbb_data['battery_soc'])  # battery_soc in %
     battery_power = round(load - pv_power - grid_power, 3)  # battery_power in W
 
-    mqtt.publish("homeassistant/tbb-scraper/problem/state", client, alarm_state)
-    mqtt.publish("homeassistant/tbb-scraper/soc/state", client, battery_soc)
-    mqtt.publish("homeassistant/tbb-scraper/load/state", client, load)
-    mqtt.publish("homeassistant/tbb-scraper/pvPower/state", client, pv_power)
-    mqtt.publish("homeassistant/tbb-scraper/gridPower/state", client, grid_power)
-    mqtt.publish("homeassistant/tbb-scraper/battPower/state", client, battery_power)
+    mqtt.publish("homeassistant/tbb-scraper/problem/state", client, alarm_state, retain=True)
+    mqtt.publish("homeassistant/tbb-scraper/soc/state", client, battery_soc, retain=True)
+    mqtt.publish("homeassistant/tbb-scraper/load/state", client, load, retain=True)
+    mqtt.publish("homeassistant/tbb-scraper/pvPower/state", client, pv_power, retain=True)
+    mqtt.publish("homeassistant/tbb-scraper/gridPower/state", client, grid_power, retain=True)
+    mqtt.publish("homeassistant/tbb-scraper/battPower/state", client, battery_power, retain=True)
     if battery_power > 0:
-        mqtt.publish("homeassistant/tbb-scraper/battDischargePower/state", client, abs(battery_power))
+        mqtt.publish("homeassistant/tbb-scraper/battDischargePower/state", client, abs(battery_power), retain=True)
+        mqtt.publish("homeassistant/tbb-scraper/battChargePower/state", client, 0, retain=True)
     if battery_power < 0:
-        mqtt.publish("homeassistant/tbb-scraper/battChargePower/state", client, abs(battery_power))
+        mqtt.publish("homeassistant/tbb-scraper/battChargePower/state", client, abs(battery_power), retain=True)
+        mqtt.publish("homeassistant/tbb-scraper/battDischargePower/state", client, 0, retain=True)
 
 
 def consume_and_publish_energy_stats(client, tbb_summary_data):
@@ -52,10 +54,10 @@ def consume_and_publish_energy_stats(client, tbb_summary_data):
     charge_energy = solar_load_delta if solar_load_delta > 0 else 0  # will be in kWh
     # DOES NOT CONSIDER EXCESS CHARGING FROM THE GRID!
 
-    mqtt.publish("homeassistant/tbb-scraper/pv/state", client, summary_solar)
-    mqtt.publish("homeassistant/tbb-scraper/export/state", client, summary_ac_feedback)
-    mqtt.publish("homeassistant/tbb-scraper/import/state", client, summary_ac_in)
-    mqtt.publish("homeassistant/tbb-scraper/loadEnergy/state", client, summary_ac_load)
+    mqtt.publish("homeassistant/tbb-scraper/pv/state", client, summary_solar, retain=True)
+    mqtt.publish("homeassistant/tbb-scraper/export/state", client, summary_ac_feedback, retain=True)
+    mqtt.publish("homeassistant/tbb-scraper/import/state", client, summary_ac_in, retain=True)
+    mqtt.publish("homeassistant/tbb-scraper/loadEnergy/state", client, summary_ac_load, retain=True)
 
     # battery charge / discharge is not available on source data
     # we have to compute it from the other values
@@ -86,35 +88,36 @@ def print_current_system_state(tbb_data):
     battery_capacity = float(tbb_data['battery_capacity'])  # battery_capacity in Ah
     battery_status = tbb_data['battery_status']
 
-    print(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-          f" | Power Summary"
-          f" | SOC: {battery_soc}%"
-          f" | Solar Yield: {pv_power} W"
-          f" | Load: {load} W"
-          f" | Surplus: {pv_power - load} W"  # should be == to battery power in the inverse
-          f" | Grid: {grid_power} W"
-          f" | Alarm State: {alarm_state}"
-          f" | Battery Power: {battery_power} W"
-          f" | DC Voltage: {dc_voltage} V"
-          f" | Battery Type: {battery_type}"
-          f" | Battery Voltage Type: {battery_voltage_type}"
-          f" | Battery Capacity: {battery_capacity} Ah"
-          f" | Battery Status: {battery_status}"
-          , flush=True)
+    print(
+        f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Power Summary\n"
+        f"  - SOC                 : {battery_soc}%\n"
+        f"  - Solar Yield         : {pv_power} W\n"
+        f"  - Load                : {load} W\n"
+        f"  - Surplus             : {pv_power - load} W  # should equal battery power (inverse)\n"
+        f"  - Grid                : {grid_power} W\n"
+        f"  - Alarm State         : {alarm_state}\n"
+        f"  - Battery Power       : {battery_power} W\n"
+        f"  - DC Voltage          : {dc_voltage} V\n"
+        f"  - Battery Type        : {battery_type}\n"
+        f"  - Battery Voltage Type: {battery_voltage_type}\n"
+        f"  - Battery Capacity    : {battery_capacity} Ah\n"
+        f"  - Battery Status      : {battery_status}",
+        flush=True
+    )
 
 
 def print_daily_stats_thus_far(tbb_summary_data):
     # this _may_ be our charge stat, given that we never feed back to the grid
     solar_load_delta = round(tbb_summary_data['solar'] - tbb_summary_data['acout'], 2)
-    print(f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-          f" | Energy Summary"
-          f" | AC Load: {tbb_summary_data['acout']} kWh"
-          f" | AC In: {tbb_summary_data['acin']} kWh"
-          f" | Solar: {tbb_summary_data['solar']} kWh"
-          f" | Solar - Load delta: {solar_load_delta} kWh"
-          f" | AC Feedback: {tbb_summary_data['adfeedback']} kWh"
-          , flush=True)
-
+    print(
+        f"{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | Energy Summary\n"
+        f"  - AC Load             : {tbb_summary_data['acout']} kWh\n"
+        f"  - AC In               : {tbb_summary_data['acin']} kWh\n"
+        f"  - Solar               : {tbb_summary_data['solar']} kWh\n"
+        f"  - Solar - Load delta  : {solar_load_delta} kWh\n"
+        f"  - AC Feedback         : {tbb_summary_data['adfeedback']} kWh",
+        flush=True
+    )
 
 async def main():
 
