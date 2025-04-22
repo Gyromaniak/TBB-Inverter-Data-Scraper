@@ -150,7 +150,7 @@ async def main():
     mqtt_handler = MQTTHandler(client, tbb, config)
     mqtt_handler.subscribe_to_command_topics()
 
-    print("Collecting power data every 10 seconds.")
+    print("Collecting power data every 5 seconds.")
     print("####################################################")
 
     error_count = 0
@@ -158,6 +158,7 @@ async def main():
     while True:
 
         try:
+            mqtt.publish_discovery_messages(client)
             tbb_data = tbb.get_tbb_data_from_sites(site_to_query)
             consume_and_publish_power_stats(client, tbb_data)
 
@@ -167,7 +168,7 @@ async def main():
             print_current_system_state(tbb_data)
             print_daily_stats_thus_far(tbb_summary_data)
 
-            await asyncio.sleep(10)
+            await asyncio.sleep(5)
         except Exception as e:
 
             try:
@@ -176,7 +177,7 @@ async def main():
             except Exception as e:
                 print(f"Failed to reinitialize TBB object: {e}")
                 error_count += 1
-                await asyncio.sleep(10)
+                await asyncio.sleep(5)
                 continue
 
             print(f"An error occurred ({error_count}/{error_max}): {e}")
@@ -186,7 +187,7 @@ async def main():
                 print("Too many errors occurred. Exiting.")
                 break
 
-            await asyncio.sleep(10)
+            await asyncio.sleep(5)
             continue
 
 
