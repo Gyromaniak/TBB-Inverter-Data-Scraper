@@ -184,8 +184,10 @@ async def main():
             error_count += 1
 
             if error_count >= error_max:
-                print("Too many errors occurred. Exiting.")
-                break
+                print("Too many errors occurred. Sleeping before retrying.")
+                error_count = 0
+                await asyncio.sleep(30)
+                continue
 
             await asyncio.sleep(5)
             continue
