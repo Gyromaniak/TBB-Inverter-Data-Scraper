@@ -9,10 +9,21 @@ import credentials
 
 client_id = f'python-mqtt-{random.randint(0, 1000)}'
 
+# Home Assistant publishes "online" here when its MQTT integration starts.
+HA_STATUS_TOPIC = "homeassistant/status"
+COMMAND_TOPIC = "homeassistant/+/tbb-scraper/+/commands"
+SUBSCRIPTIONS = (COMMAND_TOPIC, HA_STATUS_TOPIC)
+
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         print("Connected to MQTT Broker!")
+        # Subscriptions are lost when the connection drops, and the broker may have
+        # been restarted without its retained messages, so restore both on every
+        # (re)connect.
+        for topic in SUBSCRIPTIONS:
+            client.subscribe(topic)
+        publish_discovery_messages(client)
     else:
         print("Failed to connect, return code %d\n", rc)
 
@@ -83,6 +94,9 @@ def get_mqtt_config_message(device_class, group_name, entity_name, friendly_name
 
 
 def publish_discovery_messages(client):
+    # Discovery configs are retained so the broker hands them to Home Assistant the
+    # moment it (re)starts, whether or not this scraper is mid-request or in an
+    # error/retry cycle against the TBB API at that moment.
 
     charge_button = {
         'unique_id': 'button.tbb-charge-button',
@@ -92,7 +106,7 @@ def publish_discovery_messages(client):
         'command_topic': 'homeassistant/button/tbb-scraper/charge-button/commands',
     }
 
-    client.publish("homeassistant/button/tbb-scraper/charge-button/config", dumps(charge_button))
+    client.publish("homeassistant/button/tbb-scraper/charge-button/config", dumps(charge_button), retain=True)
 
     problem_config_message = get_binary_sensor_mqtt_config_message("power", "tbb-scraper", "problem", "Problem")
 
@@ -117,19 +131,19 @@ def publish_discovery_messages(client):
     load_energy_config_message = get_mqtt_config_message("energy", "tbb-scraper", "loadEnergy", "Load Energy", "kWh",
                                                          measurement=False)
 
-    publish(f"homeassistant/binary_sensor/tbb-scraper/problem/config", client, problem_config_message)
+    publish(f"homeassistant/binary_sensor/tbb-scraper/problem/config", client, problem_config_message, retain=True)
 
-    publish(f"homeassistant/sensor/tbb-scraper/soc/config", client, soc_config_message)
-    publish(f"homeassistant/sensor/tbb-scraper/load/config", client, load_config_message)
-    publish(f"homeassistant/sensor/tbb-scraper/pvPower/config", client, pv_power_config_message)
-    publish(f"homeassistant/sensor/tbb-scraper/gridPower/config", client, grid_power_config_message)
-    publish(f"homeassistant/sensor/tbb-scraper/battPower/config", client, batt_power_config_message)
-    publish(f"homeassistant/sensor/tbb-scraper/battChargePower/config", client, batt_charge_power_config_message)
-    publish(f"homeassistant/sensor/tbb-scraper/battDischargePower/config", client, batt_discharge_power_config_message)
+    publish(f"homeassistant/sensor/tbb-scraper/soc/config", client, soc_config_message, retain=True)
+    publish(f"homeassistant/sensor/tbb-scraper/load/config", client, load_config_message, retain=True)
+    publish(f"homeassistant/sensor/tbb-scraper/pvPower/config", client, pv_power_config_message, retain=True)
+    publish(f"homeassistant/sensor/tbb-scraper/gridPower/config", client, grid_power_config_message, retain=True)
+    publish(f"homeassistant/sensor/tbb-scraper/battPower/config", client, batt_power_config_message, retain=True)
+    publish(f"homeassistant/sensor/tbb-scraper/battChargePower/config", client, batt_charge_power_config_message, retain=True)
+    publish(f"homeassistant/sensor/tbb-scraper/battDischargePower/config", client, batt_discharge_power_config_message, retain=True)
 
-    publish(f"homeassistant/sensor/tbb-scraper/pv/config", client, pv_energy_config_message)
-    publish(f"homeassistant/sensor/tbb-scraper/export/config", client, export_energy_config_message)
-    publish(f"homeassistant/sensor/tbb-scraper/import/config", client, import_energy_config_message)
-    publish(f"homeassistant/sensor/tbb-scraper/discharge/config", client, discharge_energy_config_message)
-    publish(f"homeassistant/sensor/tbb-scraper/charge/config", client, charge_energy_config_message)
-    publish(f"homeassistant/sensor/tbb-scraper/loadEnergy/config", client, load_energy_config_message)
+    publish(f"homeassistant/sensor/tbb-scraper/pv/config", client, pv_energy_config_message, retain=True)
+    publish(f"homeassistant/sensor/tbb-scraper/export/config", client, export_energy_config_message, retain=True)
+    publish(f"homeassistant/sensor/tbb-scraper/import/config", client, import_energy_config_message, retain=True)
+    publish(f"homeassistant/sensor/tbb-scraper/discharge/config", client, discharge_energy_config_message, retain=True)
+    publish(f"homeassistant/sensor/tbb-scraper/charge/config", client, charge_energy_config_message, retain=True)
+    publish(f"homeassistant/sensor/tbb-scraper/loadEnergy/config", client, load_energy_config_message, retain=True)

@@ -1,4 +1,4 @@
-
+import mqtt_integration as mqtt
 
 
 class MQTTHandler(object):
@@ -15,6 +15,13 @@ class MQTTHandler(object):
         print("####################")
 
     def on_mqtt_command_message_received(self, client, userdata, message):
+        if message.topic == mqtt.HA_STATUS_TOPIC:
+            # Home Assistant (re)started: announce the entities again.
+            if message.payload.decode("utf-8") == "online":
+                print("Home Assistant came online, republishing discovery.")
+                mqtt.publish_discovery_messages(client)
+            return
+
         button = message.topic.split("/")[-2]
 
         if self.config.debug:
@@ -29,4 +36,5 @@ class MQTTHandler(object):
 
     def subscribe_to_command_topics(self):
         self.client.on_message = self.on_mqtt_command_message_received
-        self.client.subscribe("homeassistant/+/tbb-scraper/+/commands")
+        for topic in mqtt.SUBSCRIPTIONS:
+            self.client.subscribe(topic)

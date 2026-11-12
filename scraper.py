@@ -158,7 +158,6 @@ async def main():
     while True:
 
         try:
-            mqtt.publish_discovery_messages(client)
             tbb_data = tbb.get_tbb_data_from_sites(site_to_query)
             consume_and_publish_power_stats(client, tbb_data)
 
