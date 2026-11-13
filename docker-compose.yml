@@ -8,6 +8,8 @@ services:
     ports:
       - "8224:8224"
     environment:
+      # TBB reports daily totals per local calendar day; without this the scraper asks for the UTC date.
+      TZ: ${TZ:-Africa/Johannesburg}
       TBB_USERNAME: ${TBB_USERNAME}
       TBB_PASSWORD: ${TBB_PASSWORD}
       TBB_SITE_ID: ${TBB_SITE_ID}
