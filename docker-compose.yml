@@ -1,5 +1,17 @@
 version: '3.9'
 
+x-environment: &environment
+  # TBB reports daily totals per local calendar day; without this the scraper asks for the UTC date.
+  TZ: ${TZ:-Africa/Johannesburg}
+  TBB_USERNAME: ${TBB_USERNAME}
+  TBB_PASSWORD: ${TBB_PASSWORD}
+  TBB_SITE_ID: ${TBB_SITE_ID}
+  MQTT_USERNAME: ${MQTT_USERNAME}
+  MQTT_PASSWORD: ${MQTT_PASSWORD}
+  MQTT_BROKER: ${MQTT_BROKER}
+  MQTT_PORT: ${MQTT_PORT}
+  MQTT_TOPIC: ${MQTT_TOPIC}
+
 services:
   tbb-scraper:
     build:
@@ -7,17 +19,24 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8224:8224"
-    environment:
-      # TBB reports daily totals per local calendar day; without this the scraper asks for the UTC date.
-      TZ: ${TZ:-Africa/Johannesburg}
-      TBB_USERNAME: ${TBB_USERNAME}
-      TBB_PASSWORD: ${TBB_PASSWORD}
-      TBB_SITE_ID: ${TBB_SITE_ID}
-      MQTT_USERNAME: ${MQTT_USERNAME}
-      MQTT_PASSWORD: ${MQTT_PASSWORD}
-      MQTT_BROKER: ${MQTT_BROKER}
-      MQTT_PORT: ${MQTT_PORT}
-      MQTT_TOPIC: ${MQTT_TOPIC}
+    # Come back after a crash or a host reboot.
+    restart: unless-stopped
+    environment: *environment
+    networks:
+      - tbb_network
+
+  # Optional: records TBB's raw values to ./capture-data for later study. See README.
+  # Start with: docker compose --profile capture up -d --build tbb-capture
+  tbb-capture:
+    profiles: ["capture"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["venv313/bin/python", "capture.py"]
+    restart: unless-stopped
+    environment: *environment
+    volumes:
+      - ./capture-data:/usr/src/app/capture-data
     networks:
       - tbb_network
 
