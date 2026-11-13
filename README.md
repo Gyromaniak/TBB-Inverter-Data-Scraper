@@ -15,6 +15,9 @@ docker compose up -d --build
 Deploys are manual for now: the previous GitHub Actions workflow logged in over SSH with a password
 through a port forward that no longer exists, so it was removed.
 
+The scraper restarts itself after a crash or reboot (`restart: unless-stopped`), and every request to TBB
+times out after 30 seconds so a stalled connection is retried instead of hanging.
+
 # Home Assistant
 Entities are announced through MQTT discovery. The discovery messages are retained and are also
 republished whenever the scraper (re)connects to the broker or Home Assistant reports `online`

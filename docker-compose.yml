@@ -19,6 +19,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8224:8224"
+    # Come back after a crash or a host reboot.
+    restart: unless-stopped
     environment: *environment
     networks:
       - tbb_network
