@@ -14,6 +14,15 @@ def get_daily_summary(site_to_query, tbb):
 
 
 def consume_and_publish_power_stats(client, tbb_data):
+    # When the inverter last reported to TBB's cloud (ms since epoch) and whether it is connected now.
+    online_state = "ON" if tbb_data.get("online") == 1 else "OFF"
+    mqtt.publish("homeassistant/tbb-scraper/online/state", client, online_state, retain=True)
+    last_update_ms = tbb_data.get("last_update_time")
+    if last_update_ms:
+        last_update = datetime.datetime.fromtimestamp(last_update_ms / 1000, tz=datetime.timezone.utc)
+        mqtt.publish("homeassistant/tbb-scraper/lastUpdate/state", client,
+                     last_update.isoformat(timespec="seconds"), retain=True)
+
     alarm_state = "ON" if tbb_data["alarm_status"] != 0 else "OFF"
     load = float(tbb_data['consumption'])  # load in W
     pv_power = float(tbb_data['solar_yield'])  # pv_power in W

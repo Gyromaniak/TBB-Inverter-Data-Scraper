@@ -108,6 +108,26 @@ def publish_discovery_messages(client):
 
     client.publish("homeassistant/button/tbb-scraper/charge-button/config", dumps(charge_button), retain=True)
 
+    # Freshness of the data. TBB's cloud keeps serving the last reading after the inverter
+    # goes offline, so the power sensors alone cannot tell live data from frozen data.
+    # expire_after makes both entities unavailable when this scraper stops publishing.
+    online = {
+        'unique_id': 'binary_sensor.tbb-scraper-online',
+        'name': 'TBB Inverter Online',
+        'state_topic': 'homeassistant/tbb-scraper/online/state',
+        'device_class': 'connectivity',
+        'expire_after': 120,
+    }
+    last_update = {
+        'unique_id': 'sensor.tbb-scraper-lastUpdate',
+        'name': 'TBB Last Update',
+        'state_topic': 'homeassistant/tbb-scraper/lastUpdate/state',
+        'device_class': 'timestamp',
+        'expire_after': 120,
+    }
+    client.publish("homeassistant/binary_sensor/tbb-scraper/online/config", dumps(online), retain=True)
+    client.publish("homeassistant/sensor/tbb-scraper/lastUpdate/config", dumps(last_update), retain=True)
+
     problem_config_message = get_binary_sensor_mqtt_config_message("power", "tbb-scraper", "problem", "Problem")
 
     soc_config_message = get_mqtt_config_message("battery", "tbb-scraper", "soc", "Battery", "%")
