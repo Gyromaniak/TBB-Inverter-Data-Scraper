@@ -131,34 +131,34 @@ class TBB:
                 return True
             ws = create_connection(f"ws://8.210.132.188:10250/websocket/equipment/{equipment_number}",
                                    timeout=REQUEST_TIMEOUT)
+            try:
+                print("Sending Authentication message")
+                auth_message = {
+                    "uuid": str(uuid.uuid4()),
+                    "cmd": 272,
+                    "lang": "en",
+                    "data": {
+                        "token": self.token}
+                }
+                ws.send(json.dumps(auth_message))
+                print("Sent")
+                print("Receiving...")
+                result = ws.recv()
+                print("Received '%s'" % result)
+                result = ws.recv()
+                print("Sending trigger Charge message")
+                trigger_charge_message = {"uuid": str(uuid.uuid4()),
+                                          "cmd": 320,
+                                          "tag": 9,
+                                          "data": {"address": "00331103F3", "val": "1", "symbol": ""}
+                                          }
 
-            print("Sending Authentication message")
-            auth_message = {
-                "uuid": str(uuid.uuid4()),
-                "cmd": 272,
-                "lang": "en",
-                "data": {
-                    "token": self.token}
-            }
-            ws.send(json.dumps(auth_message))
-            print("Sent")
-            print("Receiving...")
-            result = ws.recv()
-            print("Received '%s'" % result)
-            result = ws.recv()
-            print("Sending trigger Charge message")
-            trigger_charge_message = {"uuid": str(uuid.uuid4()),
-                                      "cmd": 320,
-                                      "tag": 9,
-                                      "data": {"address": "00331103F3", "val": "1", "symbol": ""}
-                                      }
-
-            ws.send(json.dumps(trigger_charge_message))
-            print("Sent")
-            print("Receiving...")
-            result = ws.recv()
-            print("Received '%s'" % result)
-
-            ws.close()
+                ws.send(json.dumps(trigger_charge_message))
+                print("Sent")
+                print("Receiving...")
+                result = ws.recv()
+                print("Received '%s'" % result)
+            finally:
+                ws.close()
         else:
             print("Last pressed was less than 3 minutes ago. Not sending command.")
