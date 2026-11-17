@@ -11,7 +11,12 @@ class MQTTHandler(object):
     def handle_charge_button_press(self):
         print("Handling charge button press.")
         print("####################")
-        self.tbb.send_charge_command(self.tbb.selected_equipment_number)
+        # This runs on Paho's network thread: an exception escaping here ends that thread,
+        # and with it every MQTT update and command until the process restarts.
+        try:
+            self.tbb.send_charge_command(self.tbb.selected_equipment_number)
+        except Exception as e:
+            print(f"Charge command failed: {e!r}")
         print("####################")
 
     def on_mqtt_command_message_received(self, client, userdata, message):

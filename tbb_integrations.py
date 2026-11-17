@@ -6,6 +6,9 @@ import datetime
 import requests
 from websocket import create_connection
 
+# Seconds to wait on TBB before giving up. Without a limit a stalled connection blocks the scraper forever.
+REQUEST_TIMEOUT = 30
+
 
 class TBB:
     def __init__(self, config, credentials):
@@ -28,7 +31,7 @@ class TBB:
             'password': self.credentials.tbb_password
         }
         html = requests.post(url, data=json.dumps(body),
-                             headers=headers).content
+                             headers=headers, timeout=REQUEST_TIMEOUT).content
         fix_bytes_value = html.replace(b"'", b'"')
         my_json = json.load(io.BytesIO(fix_bytes_value))
         token = my_json["data"]["token"]
@@ -44,7 +47,7 @@ class TBB:
             "Authorization": self.token
         }
         r = requests.get(url,
-                         headers=data)
+                         headers=data, timeout=REQUEST_TIMEOUT)
         fix_bytes_value = r.content.replace(b"'", b'"')
         sites = json.load(io.BytesIO(fix_bytes_value))
 
@@ -59,7 +62,7 @@ class TBB:
         }
 
         graph_data_url = self.config.tbb_graph_base_url + f"?id={site_id}&dayTime={date}&interval=60"
-        r = requests.get(graph_data_url, headers=data)
+        r = requests.get(graph_data_url, headers=data, timeout=REQUEST_TIMEOUT)
         fix_bytes_value = r.content.replace(b"'", b'"')
         my_json = json.load(io.BytesIO(fix_bytes_value))
         inverter_data = my_json["data"]
@@ -98,7 +101,7 @@ class TBB:
         }
 
         graph_data_url = self.config.tbb_summary_base_url + f"?id={site_id}&dayTime={date}"
-        r = requests.get(graph_data_url, headers=data)
+        r = requests.get(graph_data_url, headers=data, timeout=REQUEST_TIMEOUT)
         fix_bytes_value = r.content.replace(b"'", b'"')
         my_json = json.load(io.BytesIO(fix_bytes_value))
         summary_data = my_json["data"]
@@ -126,35 +129,36 @@ class TBB:
             if self.config.debug:
                 print("Not sending charge command as debug is enabled.")
                 return True
-            ws = create_connection(f"ws://8.210.132.188:10250/websocket/equipment/{equipment_number}")
+            ws = create_connection(f"ws://8.210.132.188:10250/websocket/equipment/{equipment_number}",
+                                   timeout=REQUEST_TIMEOUT)
+            try:
+                print("Sending Authentication message")
+                auth_message = {
+                    "uuid": str(uuid.uuid4()),
+                    "cmd": 272,
+                    "lang": "en",
+                    "data": {
+                        "token": self.token}
+                }
+                ws.send(json.dumps(auth_message))
+                print("Sent")
+                print("Receiving...")
+                result = ws.recv()
+                print("Received '%s'" % result)
+                result = ws.recv()
+                print("Sending trigger Charge message")
+                trigger_charge_message = {"uuid": str(uuid.uuid4()),
+                                          "cmd": 320,
+                                          "tag": 9,
+                                          "data": {"address": "00331103F3", "val": "1", "symbol": ""}
+                                          }
 
-            print("Sending Authentication message")
-            auth_message = {
-                "uuid": str(uuid.uuid4()),
-                "cmd": 272,
-                "lang": "en",
-                "data": {
-                    "token": self.token}
-            }
-            ws.send(json.dumps(auth_message))
-            print("Sent")
-            print("Receiving...")
-            result = ws.recv()
-            print("Received '%s'" % result)
-            result = ws.recv()
-            print("Sending trigger Charge message")
-            trigger_charge_message = {"uuid": str(uuid.uuid4()),
-                                      "cmd": 320,
-                                      "tag": 9,
-                                      "data": {"address": "00331103F3", "val": "1", "symbol": ""}
-                                      }
-
-            ws.send(json.dumps(trigger_charge_message))
-            print("Sent")
-            print("Receiving...")
-            result = ws.recv()
-            print("Received '%s'" % result)
-
-            ws.close()
+                ws.send(json.dumps(trigger_charge_message))
+                print("Sent")
+                print("Receiving...")
+                result = ws.recv()
+                print("Received '%s'" % result)
+            finally:
+                ws.close()
         else:
             print("Last pressed was less than 3 minutes ago. Not sending command.")
